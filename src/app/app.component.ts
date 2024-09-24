@@ -1,13 +1,39 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import {
+  ActivatedRoute,
+  NavigationEnd,
+  NavigationStart,
+  Router,
+  RouterModule,
+} from '@angular/router';
+import { Component, inject, signal } from '@angular/core';
+import { filter, startWith, tap } from 'rxjs';
+
+import { FooterComponent } from './layout/footer/footer.component';
+import { HeaderComponent } from './layout/header/header.component';
+import { NgIf } from '@angular/common';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  styleUrl: './app.component.scss',
+  imports: [NgIf, RouterModule, HeaderComponent, FooterComponent],
 })
 export class AppComponent {
-  title = 'angular-signals-workshop';
+  router = inject(Router);
+  loading = signal(false);
+  ngOnInit() {
+    this.router.events
+      .pipe(
+        startWith(this.router.events),
+        filter(
+          (event) =>
+            event instanceof NavigationEnd || event instanceof NavigationStart
+        ),
+        tap(() => this.loading.set(true)),
+        filter((event) => event instanceof NavigationEnd),
+        tap(() => this.loading.set(false))
+      )
+      .subscribe();
+  }
 }
